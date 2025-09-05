@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Bill } from '@/app/page';
 import { Plus, Save, X } from 'lucide-react';
 
+import { useCustomCategories } from '@/hooks/useCustomCategories';
 interface BillFormProps {
   onSubmit: (billData: Omit<Bill, 'id'>) => void;
   initialData?: Bill | null;
@@ -21,7 +22,7 @@ export default function BillForm({ onSubmit, initialData, onCancel }: BillFormPr
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     amount: initialData?.amount || '',
-    category: initialData?.category || 'utilities',
+    category: initialData?.category || 'other',
     dueDate: initialData?.dueDate || '',
     isPaid: initialData?.isPaid || false,
     isRecurring: initialData?.isRecurring || true,
@@ -31,14 +32,9 @@ export default function BillForm({ onSubmit, initialData, onCancel }: BillFormPr
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = [
-    { value: 'utilities', label: 'Utilities' },
-    { value: 'streaming', label: 'Streaming' },
-    { value: 'insurance', label: 'Insurance' },
-    { value: 'subscriptions', label: 'Subscriptions' },
-    { value: 'rent', label: 'Rent/Mortgage' },
-    { value: 'other', label: 'Other' },
-  ];
+  const { getAllCategories } = useCustomCategories();
+
+  const categories = getAllCategories();
 
   const frequencies = [
     { value: 'monthly', label: 'Monthly' },

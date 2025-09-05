@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useBills } from '@/hooks/useBills';
+import { useNotifications } from '@/hooks/useNotifications';
+
 import AuthForm from '@/components/AuthForm';
 import Dashboard from '@/components/Dashboard';
 import BillList from '@/components/BillList';
 import BillForm from '@/components/BillForm';
+import NotificationBanner from '@/components/NotificationBanner';
+import CategoryManager from '@/components/CategoryManager';
+
 import { Button } from '@/components/ui/button';
-import { Plus, Receipt, BarChart3, LogOut, User } from 'lucide-react';
+import { Plus, Receipt, BarChart3, LogOut, User, Tag } from 'lucide-react';
 
 export interface Bill {
   id: string;
@@ -25,7 +30,7 @@ export interface Bill {
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bills' | 'add'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bills' | 'categories' | 'add'>('dashboard');
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   
   const { 
@@ -35,8 +40,17 @@ export default function Home() {
     addBill: addBillToDb, 
     updateBill: updateBillInDb, 
     deleteBill: deleteBillFromDb, 
-    togglePaidStatus 
+    refetch: refetchBillsFromDb,
+    togglePaidStatus,
+    reset: resetBills,
+    getBills: getBillsFromDb
   } = useBills();
+
+    const { 
+    settings: notificationSettings, 
+    upcomingBills, 
+    overdueBills 
+  } = useNotifications(bills);
 
   useEffect(() => {
     // Check if user is logged in
@@ -98,6 +112,12 @@ export default function Home() {
     setActiveTab('bills');
   };
 
+  const onAuthSuccess = async (userId: string) => {
+    setUser(true);
+    console.log(userId)
+    await getBillsFromDb(userId)
+  }
+
   // Show loading screen
   if (loading) {
     return (
@@ -112,7 +132,7 @@ export default function Home() {
 
   // Show auth form if not logged in
   if (!user) {
-    return <AuthForm onAuthSuccess={() => setUser(true)} />;
+    return <AuthForm onAuthSuccess={(userId) => onAuthSuccess(userId)} />;
   }
 
   return (
@@ -161,6 +181,14 @@ export default function Home() {
               Bills
             </Button>
             <Button
+              variant={activeTab === 'categories' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('categories')}
+              className="flex items-center gap-2"
+            >
+              <Tag className="h-4 w-4" />
+              Categories
+            </Button>
+            <Button
               variant={activeTab === 'add' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('add')}
               className="flex items-center gap-2"
@@ -186,6 +214,14 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* Notification Banner */}
+            {notificationSettings.showDashboardAlerts && (
+              <NotificationBanner
+                upcomingBills={upcomingBills}
+                overdueBills={overdueBills}
+              />
+            )}
+
             {activeTab === 'dashboard' && <Dashboard bills={bills} />}
             
             {activeTab === 'bills' && (
@@ -195,6 +231,10 @@ export default function Home() {
                 onEdit={handleEdit}
                 onDelete={deleteBill}
               />
+            )}
+
+            {activeTab === 'categories' && (
+              <CategoryManager />
             )}
             
             {activeTab === 'add' && (

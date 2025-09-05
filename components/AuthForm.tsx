@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabase';
 import { Mail, Lock, User, Eye, EyeOff, Receipt } from 'lucide-react';
+import { useBills } from '@/hooks/useBills';
 
 interface AuthFormProps {
-  onAuthSuccess: () => void;
+  onAuthSuccess: (userId: string) => void;
 }
 
 export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
@@ -40,7 +41,8 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         
         if (data.user) {
           setSuccess('Successfully signed in!');
-          onAuthSuccess();
+          console.log("Signed in user:", data.user);
+          onAuthSuccess(data.user.id);
         }
       } else {
         if (password !== confirmPassword) {

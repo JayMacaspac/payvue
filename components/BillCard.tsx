@@ -14,6 +14,7 @@ interface BillCardProps {
 }
 
 export default function BillCard({ bill, onTogglePaid, onEdit, onDelete }: BillCardProps) {
+  // TODO: add currency support based on user preference
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

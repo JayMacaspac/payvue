@@ -9,6 +9,10 @@ export function useBills() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const reset = async () => {
+    setBills([]);
+  }
+
   // Fetch bills from database
   const fetchBills = async () => {
     try {
@@ -17,6 +21,7 @@ export function useBills() {
       
       if (!user) {
         setBills([]);
+        console.log("No user found, No bills to fetch");
         return;
       }
 
@@ -49,6 +54,40 @@ export function useBills() {
       setLoading(false);
     }
   };
+
+  const getBills = async (userId: string) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('bills')
+        .select('*')
+        .eq('user_id', userId)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Transform database format to app format
+      const transformedBills: Bill[] = (data || []).map(bill => ({
+        id: bill.id,
+        name: bill.name,
+        amount: Number(bill.amount),
+        category: bill.category,
+        dueDate: bill.due_date,
+        isPaid: bill.is_paid,
+        isRecurring: bill.is_recurring,
+        frequency: bill.frequency as 'monthly' | 'yearly' | 'quarterly',
+        description: bill.description || undefined,
+      }));
+
+      setBills(transformedBills);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching bills:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Add new bill
   const addBill = async (billData: Omit<Bill, 'id'>) => {
@@ -178,6 +217,7 @@ export function useBills() {
           table: 'bills' 
         }, 
         () => {
+          console.log("Bills table changed, refetching...");
           fetchBills(); // Refetch when changes occur
         }
       )
@@ -197,5 +237,7 @@ export function useBills() {
     deleteBill,
     togglePaidStatus,
     refetch: fetchBills,
+    getBills,
+    reset
   };
 }
